@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# Chemin du répertoire de dépôt sur la carte SD
+SD_CARD_PATH="/storage/emulated/0/DETECTION"
+
+# Créer le répertoire DETECTION sur la carte SD si nécessaire
+if [ ! -d "$SD_CARD_PATH" ]; then
+    mkdir -p "$SD_CARD_PATH"
+    echo "Répertoire $SD_CARD_PATH créé."
+fi
+
+# Adresses IP à bloquer
+IP_ADDRESSES=("51.104.15.252" "23.53.4.25" "54.39.48.112" "34.98.110.65" "20.189.173.3" "20.230.46.154" "162.159.194.88" "52.96.88.146")
+
+# Fonction pour bloquer les adresses IP
+function block_ips {
+    for IP in "${IP_ADDRESSES[@]}"; do
+        iptables -A INPUT -s $IP -j DROP
+        iptables -A OUTPUT -d $IP -j DROP
+        echo "Blocage de l'adresse IP $IP"
+        echo "$(date): Blocage de l'adresse IP $IP" >> "$SD_CARD_PATH/detection_log.txt"
+    done
+}
+
+# Fonction de surveillance continue
+function monitor_connections {
+    while true; do
+        # Affiche les connexions réseau
+        netstat -tunlp > "$SD_CARD_PATH/current_connections.txt"
+        
+        # Attendre 5 secondes avant la prochaine vérification
+        sleep 5
+    done
+}
+
+# Bloquer les adresses IP
+block_ips
+
+# Lancer la surveillance des connexions
+monitor_connections
